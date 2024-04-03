@@ -83,20 +83,25 @@ marker_cluster = MarkerCluster().add_to(map)
 # st.title('Property Map')
 folium_static(map)
 
-# Year slider
-selected_year = st.slider('Year', year_min, year_max, (year_min, year_max))
+col1, col2 = st.columns(2)
 
-# Neighborhood dropdown
-neighborhoods = data['Neighborhood'].unique().tolist()
-selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
+with col1:
+    # Year slider
+    selected_year = st.slider('Year', year_min, year_max, (year_min, year_max))
 
-# Buyer dropdown
-buyers = data['Owner 1'].unique().tolist()
-selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
+    # Buyer dropdown
+    buyers = data['Owner 1'].unique().tolist()
+    selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
+    
 
-# Price slider
-min_price, max_price = get_slider_ranges(data, 'Neighborhood')
-selected_price = st.slider('Price', min_price, max_price, (min_price, max_price))
+with col2:
+    # Price slider
+    min_price, max_price = get_slider_ranges(data, 'Neighborhood')
+    selected_price = st.slider('Price', min_price, max_price, (min_price, max_price))
+    
+    # Neighborhood dropdown
+    neighborhoods = data['Neighborhood'].unique().tolist()
+    selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
 
 # Filter data based on selected filters
 filtered_data = filter_data(data, selected_year, selected_neighborhood)
