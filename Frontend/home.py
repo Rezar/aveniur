@@ -29,7 +29,7 @@ set_background('./images/background.png')
 
 '# L\'Avenir Holdings Inc Dashboard'
 # streamlit run home.py 
-st.tabs(["HOME", "PREDICTION", "SETTINGS", "ABOUT"])
+tab1, tab2, tab3, tab4 = st.tabs(["HOME", "PREDICTION", "SETTINGS", "ABOUT"])
 
 # Load data
 @st.cache_data
@@ -51,92 +51,95 @@ def get_slider_ranges(data, column_name):
 # Set the location to Florida
 florida_location = [27.994402, -81.760254]  # Center of Florida
 
-# Load data
-data = load_data()
+with tab1:
+    # Load data
+    data = load_data()
 
-# Step 2: Drop rows with missing values
-data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date','Prior Sale Date', 'Year Built'])
+    # Step 2: Drop rows with missing values
+    data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date','Prior Sale Date', 'Year Built'])
 
-# Step 3: Convert 'Last Sale Date' column to datetime
-data['Last Sale Date'] = pd.to_datetime(data['Last Sale Date'], format='%m/%d/%Y')
-data['Prior Sale Date'] = pd.to_datetime(data['Prior Sale Date'], format='%m/%d/%Y')
+    # Step 3: Convert 'Last Sale Date' column to datetime
+    data['Last Sale Date'] = pd.to_datetime(data['Last Sale Date'], format='%m/%d/%Y')
+    data['Prior Sale Date'] = pd.to_datetime(data['Prior Sale Date'], format='%m/%d/%Y')
 
-# Step 4: Add 'Last Sale Year' column
-data['Last Sale Year'] = data['Last Sale Date'].dt.year
-data['Prior Sale Year'] = data['Prior Sale Date'].dt.year
-data['Year Built'] = data['Year Built'].astype('int64')
+    # Step 4: Add 'Last Sale Year' column
+    data['Last Sale Year'] = data['Last Sale Date'].dt.year
+    data['Prior Sale Year'] = data['Prior Sale Date'].dt.year
+    data['Year Built'] = data['Year Built'].astype('int64')
 
-# Using 50 rows of data
-data = data.sample(frac=0.1, random_state=50)
+    # Using 50 rows of data
+    data = data.sample(frac=0.1, random_state=30)
 
-# Create a GeoDataFrame around the Florida location
-geometry = [Point(xy) for xy in zip(data['lng'], data['lat'])]
-gdf = gpd.GeoDataFrame(data, geometry=geometry, crs="EPSG:4326")
+    # Create a GeoDataFrame around the Florida location
+    geometry = [Point(xy) for xy in zip(data['lng'], data['lat'])]
+    gdf = gpd.GeoDataFrame(data, geometry=geometry, crs="EPSG:4326")
 
-# Plot the GeoDataFrame on Streamlit map
-st.map(gdf, longitude='lng', latitude='lat', zoom=8)
+    # Plot the GeoDataFrame on Streamlit map
+    st.map(gdf, longitude='lng', latitude='lat', zoom=8)
 
-# Concatenate 'Value Data Source' and 'Parcel Characteristics Data' for year range
-year_min = min(data['Last Sale Year'].min(), data['Prior Sale Year'].min(), data['Year Built'].min())
-year_max = max(data['Last Sale Year'].max(), data['Prior Sale Year'].max(), data['Year Built'].max())
+    # Concatenate 'Value Data Source' and 'Parcel Characteristics Data' for year range
+    year_min = min(data['Last Sale Year'].min(), data['Prior Sale Year'].min(), data['Year Built'].min())
+    year_max = max(data['Last Sale Year'].max(), data['Prior Sale Year'].max(), data['Year Built'].max())
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    # Year slider
-    selected_year = st.slider('Year', year_min, year_max, (year_min, year_max))
+    with col1:
+        # Year slider
+        selected_year = st.slider('Year', year_min, year_max, (year_min, year_max))
 
-    # Buyer dropdown
-    buyers = data['Owner 1'].unique().tolist()
-    selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
+        # Buyer dropdown
+        buyers = data['Owner 1'].unique().tolist()
+        selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
 
-with col2:
-    # Price slider
-    min_price, max_price = get_slider_ranges(data, 'Last Sale Amount')
-    selected_price = st.slider('Price', min_price, max_price, (min_price, max_price))
-    
-    # Neighborhood dropdown
-    neighborhoods = data['Neighborhood'].unique().tolist()
-    selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
+    with col2:
+        # Price slider
+        min_price, max_price = get_slider_ranges(data, 'Last Sale Amount')
+        selected_price = st.slider('Price', min_price, max_price, (min_price, max_price))
+        
+        # Neighborhood dropdown
+        neighborhoods = data['Neighborhood'].unique().tolist()
+        selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
 
-# Filter data based on selected filters
-filtered_data = filter_data(data, selected_year, selected_price)
+    # Filter data based on selected filters
+    filtered_data = filter_data(data, selected_year, selected_price)
 
-# selected_buyer
+    # selected_buyer
 
-# Filter data based on selected buyer
-if selected_buyer != 'All':
-    filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
+    # Filter data based on selected buyer
+    if selected_buyer != 'All':
+        filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
 
-# Filter data based on selected filters
-filtered_data = filter_data(data, selected_year, selected_price)
+    # Filter data based on selected filters
+    filtered_data = filter_data(data, selected_year, selected_price)
 
-# Filter data based on selected buyer
-if selected_buyer != 'All':
-    filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
+    # Filter data based on selected buyer
+    if selected_buyer != 'All':
+        filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
 
-# Display selected price range
-st.title('Selected Price Range')
-st.write(f'$Min Price: {selected_price[0]:,} - Max Price: {selected_price[1]:,}')
+    # Display selected price range
+    st.title('Selected Price Range')
+    st.write(f'Min Price: {selected_price[0]:,} - Max Price: {selected_price[1]:,}')
 
-# Display filtered data
-st.title('Filtered Data')
-st.write(filtered_data.T)
+    # Display filtered data
+    st.title('Filtered Data')
+    st.write(filtered_data.T)
 
-# modal = Modal(key="Demo Key",title="test")
-# for col in st.columns(8):
-#     with col:
-#         open_modal = st.button(label='clicck')
-#         if open_modal:
-#             with modal.container():
-#                 # st.markdown('testtesttesttesttesttesttesttest')
-#                 for index, row in filtered_data.iterrows():
-#                     for col in filtered_data.columns:
-#                         st.markdown(f"{col}: {row[col]}")
 
-# Display selected price range
-st.title('Selected Price Range')
-st.write(f'Min Price: {selected_price[0]} - Max Price: {selected_price[1]}')
+with tab2:
+#    st.header("Prediction")
+   st.subheader("What do you want to search today?")
+   prompt = st.chat_input("Type a response")
+   if prompt == "Dog":
+        st.write(f"User has sent the following prompt: {prompt}")
+        st.image("https://static.streamlit.io/examples/dog.jpg", width=200)
+
+with tab3:
+   st.header("Settings")
+   st.subheader('Settings List\n- Settings 1\n- Settings 2\n- Settings 3\n-Settings 4')
+
+with tab4:
+   st.header("About us")
+   st.title('L\'Avenir Holdings Inc. is a company dealing with Real estate..')
 
 # import streamlit as st
 # import pandas as pd
