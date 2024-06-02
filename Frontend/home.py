@@ -1,10 +1,24 @@
+# def main():
+#     st.write("# Home Page")
+    
+#     # Get the query parameters
+#     query_params = st.query_params()
+    
+#     # Check if the 'authenticated' parameter is present and set to 'true'
+#     if 'authenticated' in query_params and query_params['authenticated'][0] == 'true':
+#         st.success("Login Successful")
+#     else:
+#         st.warning("Login failed")
+
+# if _name_ == "_main_":
+#     main()
+
 import streamlit as st
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 import base64
 
-# Convert background image to base64
 def get_base64(bin_file):
     with open(bin_file, 'rb') as f:
         data = f.read()
@@ -27,8 +41,7 @@ set_background('./images/background.png')
 
 st.title("L'Avenir Holdings Inc Dashboard")
 
-tab1, tab2, tab3, tab4 = st.tabs(["HOME", "PREDICTION", "SETTINGS", "ABOUT"])
-data_selected = False
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["HOME", "HISTORY", "2024 PREDICTED BUYERS", "SETTINGS", "ABOUT"])
 
 @st.cache_data
 def load_data(file):
@@ -55,7 +68,12 @@ def filter_data_based_on_year(dataa, year_range):
 
 @st.cache_data
 def get_slider_ranges(data, column_name):
-    return (int(data[column_name].min()), int(data[column_name].max()))
+    numeric_data = pd.to_numeric(data[column_name], errors='coerce').dropna()
+    if numeric_data.empty:
+        return (0, 0)
+    min_value = numeric_data.min()
+    max_value = numeric_data.max()
+    return (int(min_value), int(max_value))
 
 # Initialize session state for data file selection
 if 'data_file' not in st.session_state:
@@ -110,7 +128,7 @@ with tab1:
     gdf = gpd.GeoDataFrame(data, geometry=geometry, crs="EPSG:4326")
 
     st.subheader("Original map:")
-    st.map(gdf, longitude='lng', latitude='lat', zoom=8)
+    st.map(gdf.rename(columns={'lng': 'longitude', 'lat': 'latitude'}), zoom=8)
 
     year_min = min(data['Last Sale Year'].min(), data['Prior Sale Year'].min(), data['Year Built'].min())
     year_max = max(data['Last Sale Year'].max(), data['Prior Sale Year'].max(), data['Year Built'].max())
@@ -133,7 +151,7 @@ with tab1:
     gdf_filtered = gpd.GeoDataFrame(filtered_data, geometry=geometry_filtered, crs="EPSG:4326")
 
     st.subheader("Filtered map:")
-    st.map(gdf_filtered, longitude='lng', latitude='lat', zoom=8)
+    st.map(gdf_filtered.rename(columns={'lng': 'longitude', 'lat': 'latitude'}), zoom=8)
 
     if selected_buyer != 'All':
         filtered_data = filtered_data[filtered_data[owner_column] == selected_buyer]
@@ -181,6 +199,54 @@ with tab2:
         st.write(filtered_data.T)
 
 with tab3:
+    st.subheader("Predicted Buyers for 2024")
+
+    if st.session_state['data_file'] != 'all_predicted_buyers_2024_details.xlsx':
+        st.warning("Please switch to the reduced data file in the Settings tab to use this feature.")
+    else:
+        reduced_data = load_data('all_predicted_buyers_2024_details.xlsx')
+
+        owners = reduced_data['Owner'].unique().tolist() if 'Owner' in reduced_data.columns else []
+        types = reduced_data['Type'].dropna().unique().tolist() if 'Type' in reduced_data.columns else []
+
+        selected_owner = st.selectbox('Owner', ['All'] + owners)
+        selected_type = st.selectbox('Type', ['All'] + types)
+
+        if 'Owner' in reduced_data.columns and 'Type' in reduced_data.columns:
+            if selected_owner != 'All':
+                reduced_data = reduced_data[reduced_data['Owner'] == selected_owner]
+            if selected_type != 'All':
+                reduced_data = reduced_data[reduced_data['Type'] == selected_type]
+
+            st.title('Filtered Data')
+
+            # Check if both owner and type are "All"
+            if selected_owner == 'All' and selected_type == 'All':
+                st.warning("Please select to see predicted buyers")  # Display all data
+            else:
+                if reduced_data.shape[0] == 1:
+                    # Display the map and data vertically
+                    row = reduced_data.iloc[0]
+                    latitude = float(row['lat'].split(',')[0].strip())  # Extract latitude and convert to float
+                    longitude = float(row['lng'].split(',')[0].strip())  # Extract longitude and convert to float
+                    map_data = pd.DataFrame([[latitude, longitude]], columns=['latitude', 'longitude'])
+                    st.map(map_data, zoom=8)
+                    st.write(row)
+                else:
+                    # Display the data horizontally
+                    for index, row in reduced_data.iterrows():
+                        pcol1, pcol2 = st.columns(2)
+                        with pcol1:
+                            # Display the map
+                            latitude = float(row['lat'].split(',')[0].strip())  # Extract latitude and convert to float
+                            longitude = float(row['lng'].split(',')[0].strip())  # Extract longitude and convert to float
+                            map_data = pd.DataFrame([[latitude, longitude]], columns=['latitude', 'longitude'])
+                            st.map(map_data, zoom=8)
+                            
+                        with pcol2:
+                            st.write(row)
+
+with tab4:
     st.header("Settings")
     st.subheader('What type of data do you want to use to filter?')
     
@@ -202,23 +268,25 @@ with tab3:
     if 'data_selected' in st.session_state:
         st.success(st.session_state['data_selected'])
 
-with tab4:
-    st.header("About us")
-    st.write("L'Avenir Holdings Inc. is a Real estate company which deals with building, buying and selling of properties such as lands, detached, semi-detached, town houses, apartments, condos, and waterfront/beach houses. We are located in Sarasota, Florida, USA.")
+with tab5:
+    # st.header("About us")
+    st.image("images/lavenir.PNG")
+    st.write("L'Avenir Holdings Inc. stands as a beacon in the real estate landscape of Sarasota, Florida, USA. Specializing in the art of property transactions, our expertise spans the spectrum from sprawling lands to cozy apartments, from charming townhouses to luxurious waterfront retreats. \n\nOur dedication lies in crafting seamless experiences for both buyers and sellers, ensuring every transaction is not just a deal, but a journey towards realizing dreams and aspirations. With an unwavering commitment to excellence, we navigate the complexities of the real estate market with finesse, guided by a vision of shaping tomorrow's landscapes today. \n\nAt L'Avenir Holdings Inc., every property is not just a structure; it's a canvas waiting to be adorned with memories and possibilities. Whether it's finding the perfect home to settle into or unlocking the potential of a lucrative investment opportunity, we are the trusted partner guiding you every step of the way. With integrity, innovation, and a passion for the extraordinary, we redefine what it means to turn dreams into reality in the realm of real estate.")
 
 # import streamlit as st
 # import pandas as pd
 # import geopandas as gpd
 # from shapely.geometry import Point
+# import numpy as np
 # import base64
 
-# # Convert background image to base64
+# # convert background image to base64
 # def get_base64(bin_file):
 #     with open(bin_file, 'rb') as f:
 #         data = f.read()
 #     return base64.b64encode(data).decode()
 
-# # Set background image
+# # set background image
 # def set_background(png_file):
 #     bin_str = get_base64(png_file)
 #     page_bg_img = '''
@@ -233,160 +301,199 @@ with tab4:
 
 # set_background('./images/background.png')
 
-# st.title("L'Avenir Holdings Inc Dashboard")
+# '# L\'Avenir Holdings Inc Dashboard'
+# # streamlit run home.py 
+# st.tabs(["HOME", "PREDICTION", "SETTINGS", "ABOUT"])
 
-# tab1, tab2, tab3, tab4 = st.tabs(["HOME", "PREDICTION", "SETTINGS", "ABOUT"])
-
+# # Load data
 # @st.cache_data
-# def load_data(file):
-#     return pd.read_excel(file)
+# def load_data():
+#     return pd.read_excel('merged_df.xlsx')
 
+# # Filter data based on selected year and neighborhood
 # @st.cache_data
-# def filter_data(dataa, year_range, price, buyer):
-#     if isinstance(buyer, str):
-#         buyer = [buyer]
-#     filtered_data = dataa[(dataa['Prior Sale Year'].isin(range(year_range[0], year_range[1] + 1))) & 
-#                             (dataa['Neighborhood'].isin(range(price[0], price[1] + 1))) & 
-#                             (dataa['Owner 1'].isin(buyer))]
+# def filter_data(data, year_range, price):
+#     filtered_data = data[(data['Prior Sale Year'].isin(range(year_range[0], year_range[1] + 1))) & 
+#                          (data['Neighborhood'].isin(range(price[0], price[1] + 1)))]
 #     return filtered_data
 
-# @st.cache_data
-# def filter_data_based_on_price(dataa, price):
-#     filtered_data = dataa[(dataa['Neighborhood'].isin(range(price[0], price[1] + 1)))]
-#     return filtered_data
-
-# @st.cache_data
-# def filter_data_based_on_year(dataa, year_range):
-#     filtered_data = dataa[(dataa['Prior Sale Year'].isin(range(year_range[0], year_range[1] + 1)))]
-#     return filtered_data
-
+# # Get unique values for sliders
 # @st.cache_data
 # def get_slider_ranges(data, column_name):
 #     return (int(data[column_name].min()), int(data[column_name].max()))
 
-# # Initial data load
-# file_large_data = 'merged_df.xlsx'
-# file_reduced_data = 'all_predicted_buyers_2024_details.xlsx'
-# data_file = file_large_data  # default to large data
-# data = load_data(data_file)
+# # Set the location to Florida
+# florida_location = [27.994402, -81.760254]  # Center of Florida
 
-# with tab1:
-#     data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date', 'Prior Sale Date', 'Year Built'])
+# # Load data
+# data = load_data()
+
+# # Step 2: Drop rows with missing values
+# data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date','Prior Sale Date', 'Year Built'])
+
+# # Step 3: Convert 'Last Sale Date' column to datetime
+# data['Last Sale Date'] = pd.to_datetime(data['Last Sale Date'], format='%m/%d/%Y')
+# data['Prior Sale Date'] = pd.to_datetime(data['Prior Sale Date'], format='%m/%d/%Y')
+
+# # Step 4: Add 'Last Sale Year' column
+# data['Last Sale Year'] = data['Last Sale Date'].dt.year
+# data['Prior Sale Year'] = data['Prior Sale Date'].dt.year
+# data['Year Built'] = data['Year Built'].astype('int64')
+
+# # Create a GeoDataFrame around the Florida location
+# geometry = [Point(xy) for xy in zip(data['lng'], data['lat'])]
+# gdf = gpd.GeoDataFrame(data, geometry=geometry, crs="EPSG:4326")
+
+# # Plot the GeoDataFrame on Streamlit map
+# st.map(gdf, longitude='lng', latitude='lat', zoom=8)
+
+# # Concatenate 'Value Data Source' and 'Parcel Characteristics Data' for year range
+# year_min = min(data['Last Sale Year'].min(), data['Prior Sale Year'].min(), data['Year Built'].min())
+# year_max = max(data['Last Sale Year'].max(), data['Prior Sale Year'].max(), data['Year Built'].max())
+
+# col1, col2 = st.columns(2)
+
+# with col1:
+#     # Year slider
+#     selected_year = st.slider('Year', year_min, year_max, (year_min, year_max))
+
+#     # Buyer dropdown
+#     buyers = data['Owner 1'].unique().tolist()
+#     selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
+
+# with col2:
+#     # Price slider
+#     min_price, max_price = get_slider_ranges(data, 'Last Sale Amount')
+#     selected_price = st.slider('Price', min_price, max_price, (min_price, max_price))
     
-#     # Clean date strings before converting to datetime
-#     data['Last Sale Date'] = data['Last Sale Date'].str.strip()
-#     data['Prior Sale Date'] = data['Prior Sale Date'].str.strip()
+#     # Neighborhood dropdown
+#     neighborhoods = data['Neighborhood'].unique().tolist()
+#     selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
+
+# # Filter data based on selected filters
+# filtered_data = filter_data(data, selected_year, selected_price)
+
+# # Filter data based on selected buyer
+# if selected_buyer != 'All':
+#     filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
+
+# # Display selected price range
+# st.title('Selected Price Range')
+# st.write(f'Min Price: {selected_price[0]} - Max Price: {selected_price[1]}')
+
+# # Display filtered data
+# st.title('Filtered Data')
+# st.write(filtered_data.T)
+
+
+# import streamlit as st
+# import pandas as pd
+# import geopandas as gpd
+# from shapely.geometry import Point
+# import numpy as np
+# import base64
+
+# # convert background image to base64
+# def get_base64(bin_file):
+#     with open(bin_file, 'rb') as f:
+#         data = f.read()
+#     return base64.b64encode(data).decode()
+
+# # set background image
+# def set_background(png_file):
+#     bin_str = get_base64(png_file)
+#     page_bg_img = '''
+#     <style>
+#     .stApp {
+#     background-image: url("data:image/png;base64,%s");
+#     background-size: cover;
+#     }
+#     </style>
+#     ''' % bin_str
+#     st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# set_background('./images/background.png')
+
+# '# L\'Avenir Holdings Inc Dashboard'
+# # streamlit run home.py 
+# st.tabs(["HOME", "PREDICTION", "SETTINGS", "ABOUT"])
+
+# # Load data
+# @st.cache_data
+# def load_data():
+#     return pd.read_excel('merged_df.xlsx')
+
+# # Filter data based on selected year and neighborhood
+# @st.cache_data
+# def filter_data(data, year_range, price):
+#     filtered_data = data[(data['Prior Sale Year'].isin(range(year_range[0], year_range[1] + 1))) & 
+#                          (data['Neighborhood'].isin(range(price[0], price[1] + 1)))]
+#     return filtered_data
+
+# # Get unique values for sliders
+# @st.cache_data
+# def get_slider_ranges(data, column_name):
+#     return (int(data[column_name].min()), int(data[column_name].max()))
+
+# # Set the location to Florida
+# florida_location = [27.994402, -81.760254]  # Center of Florida
+
+# # Load data
+# data = load_data()
+
+# # Step 2: Drop rows with missing values
+# data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date','Prior Sale Date', 'Year Built'])
+
+# # Step 3: Convert 'Last Sale Date' column to datetime
+# data['Last Sale Date'] = pd.to_datetime(data['Last Sale Date'], format='%m/%d/%Y')
+# data['Prior Sale Date'] = pd.to_datetime(data['Prior Sale Date'], format='%m/%d/%Y')
+# data['Year Built'] = data['Year Built'].astype('int64')
+
+# # Step 4: Add 'Last Sale Year' column
+# data['Last Sale Year'] = data['Last Sale Date'].dt.year
+# data['Prior Sale Year'] = data['Prior Sale Date'].dt.year
+
+# # Create a GeoDataFrame around the Florida location
+# geometry = [Point(xy) for xy in zip(data['lng'], data['lat'])]
+# gdf = gpd.GeoDataFrame(data, geometry=geometry, crs="EPSG:4326")
+
+# # Plot the GeoDataFrame on Streamlit map
+# st.map(gdf, longitude='lng', latitude='lat', zoom=8)
+
+# # Concatenate 'Value Data Source' and 'Parcel Characteristics Data' for year range
+# year_min = min(data['Last Sale Year'].min(), data['Prior Sale Year'].min(), data['Year Built'].min())
+# year_max = max(data['Last Sale Year'].max(), data['Prior Sale Year'].max(), data['Year Built'].max())
+
+# col1, col2 = st.columns(2)
+
+# with col1:
+#     # Year slider
+#     selected_year = st.slider('Year', year_min, year_max, (year_min, year_max))
+
+#     # Buyer dropdown
+#     buyers = data['Owner 1'].unique().tolist()
+#     selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
+
+# with col2:
+#     # Price slider
+#     min_price, max_price = get_slider_ranges(data, 'Last Sale Amount')
+#     selected_price = st.slider('Price', min_price, max_price, (min_price, max_price))
     
-#     data['Last Sale Date'] = pd.to_datetime(data['Last Sale Date'], format='%m/%d/%Y')
-#     data['Prior Sale Date'] = pd.to_datetime(data['Prior Sale Date'], format='%m/%d/%Y')
-    
-#     data['Last Sale Year'] = data['Last Sale Date'].dt.year
-#     data['Prior Sale Year'] = data['Prior Sale Date'].dt.year
-#     data['Year Built'] = data['Year Built'].astype('int64')
-#     data = data.sample(frac=0.1, random_state=10)
+#     # Neighborhood dropdown
+#     neighborhoods = data['Neighborhood'].unique().tolist()
+#     selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
 
-#     geometry = [Point(xy) for xy in zip(data['lng'], data['lat'])]
-#     gdf = gpd.GeoDataFrame(data, geometry=geometry, crs="EPSG:4326")
-#     st.subheader("Original map:")
-#     st.map(gdf, longitude='lng', latitude='lat', zoom=8)
+# # Filter data based on selected filters
+# filtered_data = filter_data(data, selected_year, selected_price)
 
-#     year_min = min(data['Last Sale Year'].min(), data['Prior Sale Year'].min(), data['Year Built'].min())
-#     year_max = max(data['Last Sale Year'].max(), data['Prior Sale Year'].max(), data['Year Built'].max())
+# # Filter data based on selected buyer
+# if selected_buyer != 'All':
+#     filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
 
-#     col1, col2 = st.columns(2)
+# # Display selected price range
+# st.title('Selected Price Range')
+# st.write(f'Min Price: {selected_price[0]} - Max Price: {selected_price[1]}')
 
-#     with col1:
-#         selected_year = st.slider('Year', 2000, 2024, (2000, 2024))
-#         buyers = data['Owner 1'].unique().tolist()
-#         selected_buyer = st.selectbox('Buyer', ['All'] + buyers)
-
-#     with col2:
-#         min_price, max_price = get_slider_ranges(data, 'Last Sale Amount')
-#         selected_price = st.slider('Price', 1000, 10000, (1000, 10000))
-#         neighborhoods = data['Neighborhood'].unique().tolist()
-#         selected_neighborhood = st.selectbox('Neighborhood', ['All'] + neighborhoods)
-
-#     filtered_data = filter_data(data, selected_year, selected_price, selected_buyer)
-#     geometry_filtered = [Point(xy) for xy in zip(filtered_data['lng'], filtered_data['lat'])]
-#     gdf_filtered = gpd.GeoDataFrame(filtered_data, geometry=geometry_filtered, crs="EPSG:4326")
-
-#     st.subheader("Filtered map:")
-#     st.map(gdf_filtered, longitude='lng', latitude='lat', zoom=8)
-
-#     if selected_buyer != 'All':
-#         filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer]
-
-#     st.title('Selected Price Range')
-#     st.write(f'Min Price: {selected_price[0]:,} - Max Price: {selected_price[1]:,}')
-
-#     st.title('Filtered Data')
-#     st.write(filtered_data.T)
-
-# with tab2:
-#     st.subheader("What do you want to search today?")
-#     filter_options = ["Buyers", "Years", "Price", "Neighborhood"]
-#     selected_filter = st.radio("Select a filter option:", filter_options, horizontal=True)
-#     display_data = False
-
-#     if selected_filter == "Buyers":
-#         buyers_predict = data['Owner 1'].unique().tolist()
-#         selected_buyer_predict = st.selectbox('Buyers', ['All'] + buyers_predict)
-#         if selected_buyer_predict != 'All':
-#             filtered_data = filtered_data[filtered_data['Owner 1'] == selected_buyer_predict]
-#             display_data = True
-
-#     elif selected_filter == "Years":
-#         year_min, year_max = get_slider_ranges(data, 'Last Sale Year')
-#         selected_year_predict = st.slider('Years', 2000, 2024, (2000, 2024))
-#         filtered_data = filter_data_based_on_year(data, selected_year_predict)
-#         display_data = True
-
-#     elif selected_filter == "Price":
-#         min_price, max_price = get_slider_ranges(data, 'Last Sale Amount')
-#         selected_price_predict = st.slider('Prices', 1000, 10000, (1000, 10000))
-#         filtered_data = filter_data_based_on_price(data, selected_price_predict)
-#         display_data = True
-
-#     elif selected_filter == "Neighborhood":
-#         neighborhoods = data['Neighborhood'].unique().tolist()
-#         selected_neighborhood_predict = st.selectbox('Neighborhoods', ['All'] + neighborhoods)
-#         if selected_neighborhood_predict != 'All':
-#             filtered_data = filtered_data[filtered_data['Neighborhood'] == selected_neighborhood_predict]
-#             display_data = True
-
-#     if display_data:
-#         st.title('Filtered Data')
-#         st.write(filtered_data.T)
-
-# with tab3:
-#     st.header("Settings")
-#     st.subheader('What type of data do you want to use to filter?')
-    
-#     col1, col2 = st.columns(2)
-    
-#     with col1:
-#         if st.button('Select Large Data'):
-#             data_file = file_large_data
-#             st.write("Large Data Selected")
-    
-#     with col2:
-#         if st.button('Select Reduced Data'):
-#             data_file = file_reduced_data
-#             st.write("Reduced Data Selected")
-    
-#     data = load_data(data_file)
-
-# with tab4:
-#     st.header("About us")
-#     st.write("L'Avenir Holdings Inc. is a company dealing with Real estate. \nWe are located in Sarasota, Floria, USA.")
-
-# def main():
-#     if 'authenticated' in st.query_params() and st.query_params()['authenticated'] == ['true']:
-#         st.title("Authenticated Successfully!")
-#     else:
-#         st.warning("You need to log in first.")
-
-# if __name__ == "__main__":
-#     main()
-# if __name__ == "__main__":
-#     home_content()
+# # Display filtered data
+# st.title('Filtered Data')
+# st.write(filtered_data.T)
