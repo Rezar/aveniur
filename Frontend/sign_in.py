@@ -9,7 +9,7 @@ def main():
     login = Google_auth(clientId=client_id, clientSecret=client_secret, redirect_uri=redirect_uri)
 
     if login == "authenticated":
-        st.experimental_set_query_params(authenticated="true")
+        st.query_params(authenticated="true")
         st.rerun()
     else:
         st.warning("Login failed")
