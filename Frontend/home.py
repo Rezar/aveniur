@@ -62,6 +62,11 @@ def filter_data_based_on_price(dataa, price, neighborhood_column):
     return filtered_data
 
 @st.cache_data
+def filter_data_based_on_county(dataa, county):
+    filtered_data = dataa[(dataa["Situs City"].isin(county))]
+    return filtered_data
+
+@st.cache_data
 def filter_data_based_on_year(dataa, year_range):
     filtered_data = dataa[(dataa['Prior Sale Year'].isin(range(year_range[0], year_range[1] + 1)))]
     return filtered_data
@@ -105,23 +110,57 @@ def clean_coordinate_column(series):
 
 with tab1:
     # data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date', 'Prior Sale Date', 'Year Built'])
-    
+    data_county = []
     col1, col2 = st.columns(2)
 
     with col1:
-        state = ["FL","MA"]
-        selected_buyer = st.selectbox('State', ['All'] + state)
-
+        state = ["Alabama(AL)","Alaska(AK)","Arizona(AZ)"," Arkansas(AR)","California(CA)","Colorado(CO)","Connecticut(CT)","Delaware(DE)","Florida(FL)","Georgia(GA)","Hawaii(HI)","Idaho(ID)","Illinois(IL)","Indiana(IN)","Iowa(IA)"," Kansas(KS)","Kentucky(KY)","Louisiana(LA)","Maine(ME)","Maryland(MD)","Massachusetts(MA)","Michigan(MI)","Minnesota(MN)","Mississippi(MS)","Missouri(MO)","Montana(MT)","Nebraska(NE)","Nevada(NV)","New Hampshire(NH)","New Jersey(NJ)","New Mexico(NM)","New York(NY)","North Carolina(NC)","North Dakota(ND)","Ohio(OH)","Oklahoma(OK)","Oregon(OR)","PennsylvaniA(PA)","Rhode Island(RI)","South Carolina(SC)","South Dakota(SD)","Tennessee(TN)","Texas(TX)","Utah(UT)","Vermont(VT)","Virginia(VA)","Washington(WA)","West Virginia(WV)","Wisconsin(WI)","Wyoming(WY)"]
+        selected_state = st.selectbox('State', ['All'] + state)
+    
+if selected_state == "Florida(FL)":
     with col2:
-        county = ["Sarasota","Sulffolk", "Nor"]
-        selected_neighborhood = st.selectbox('County/Township', ['All'] + county)
-        agree = st.checkbox("I agree")
+        # county = ["Sarasota","Sulffolk", "Nor"]
+        # selected_neighborhood = st.selectbox('County/Township', ['All'] + county)
+        county = data["Situs City"].unique().tolist()
+        selected_county = st.selectbox('County/Township', ['All'] + county)
+        properity = st.checkbox("Properities")
+        vehicle = st.checkbox("Vehicle")
+        valuable_goods = st.checkbox("Valuable Goods")
+        # data_county = filter_data_based_on_county(data, selected_county)
 
-if agree:
-    st.write("Great!")
-
-    # st.checkbox(label, value=False, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
-
+    if properity:
+        st.write("Select the type of Properties")
+        commercial = st.checkbox("Commercial")
+        residental = st.checkbox("Residental")
+        individual = st.checkbox("Individual")
+        if commercial:
+            st.success("You chose Commerical Property to filter data")
+            if st.button("Load Data"):
+                st.success("Yaaay! See Data below..")
+        elif residental:
+            st.success("You chose Residetial Property to filter data")
+            if st.button("Load Data"):
+                st.success("Yaaay! See Data below..")
+        elif individual:
+            st.success("You chose Individual Property to filter data")
+            if st.button("Load Data"):
+                st.success("Yaaay! See Data below..")
+        else:
+            st.warning("Select one of the above..")
+    elif vehicle:
+        st.write("Select the type of Vehicle")
+        individual_vehicles = st.checkbox("Individual")
+        commercial_vehicles = st.checkbox("Commercial")
+        if individual_vehicles:
+            st.success("You chose Individual Vehicle to filter data")
+            if st.button("Load Data"):
+                st.success("Yaaay! See Data below..")    
+        elif commercial_vehicles:
+            st.success("You chose Commerical Vehicle to filter data")
+            # st.button("Load Data")
+            if st.button("Load Data"):
+                st.success("Yaaay! See Data below..")
+                # st.dataframe(data_county.T, width=1000, height=600)
 
 with tab2:
     data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date', 'Prior Sale Date', 'Year Built'])
