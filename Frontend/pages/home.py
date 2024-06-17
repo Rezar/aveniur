@@ -81,7 +81,7 @@ def show_dashboard():
         max_value = numeric_data.max()
         return (int(min_value), int(max_value))
 
-    st.image("images/lavenir.PNG")
+    # st.image("images/lavenir.PNG")
     # Initialize session state for data file selection
     if 'data_file' not in st.session_state:
         st.session_state['data_file'] = 'merged_df.xlsx'
@@ -397,9 +397,9 @@ def show_dashboard():
         st.write("L'Avenir Holdings Inc. stands as a beacon in the real estate landscape of Sarasota, Florida, USA. Specializing in the art of property transactions, our expertise spans the spectrum from sprawling lands to cozy apartments, from charming townhouses to luxurious waterfront retreats. \n\nOur dedication lies in crafting seamless experiences for both buyers and sellers, ensuring every transaction is not just a deal, but a journey towards realizing dreams and aspirations. With an unwavering commitment to excellence, we navigate the complexities of the real estate market with finesse, guided by a vision of shaping tomorrow's landscapes today. \n\nAt L'Avenir Holdings Inc., every property is not just a structure; it's a canvas waiting to be adorned with memories and possibilities. Whether it's finding the perfect home to settle into or unlocking the potential of a lucrative investment opportunity, we are the trusted partner guiding you every step of the way. With integrity, innovation, and a passion for the extraordinary, we redefine what it means to turn dreams into reality in the realm of real estate.")
 
 # Check if the user is authenticated
-if 'authenticated' in st.session_state and st.session_state.authenticated:
-    show_dashboard()
-else:
-    st.warning("Please log in to access the dashboard.")
-    if st.button("Log in"):
-        st.experimental_rerun()  # Redirect to main.py for login
+if __name__ == "__main__":
+    if 'authenticated' in st.session_state and st.session_state.authenticated:
+        show_dashboard()
+    else:
+        show_dashboard()
+        st.rerun()  # Redirect to main.py for login
