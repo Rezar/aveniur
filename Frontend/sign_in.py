@@ -2,20 +2,28 @@ import streamlit as st
 from StreamlitGauth.google_auth import Google_auth
 
 def main():
-    client_id = "CLIENT_ID"
-    client_secret = "CLIENT_SECRET"
-    redirect_uri = "http://localhost:8501/home.py"
+    client_id = "166960327947-gslpqkh5091ppc7paa4fj05sokjktv37.apps.googleusercontent.com"
+    client_secret = "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"
+    redirect_uri = "http://localhost:8501/home"  # Correcting the URI
 
     login = Google_auth(clientId=client_id, clientSecret=client_secret, redirect_uri=redirect_uri)
 
+    # Initialize session state for authentication
+    if 'authenticated' not in st.session_state:
+        st.session_state['authenticated'] = False
+
     if login == "authenticated":
-        st.query_params(authenticated="true")
-        st.rerun()
-    else:
+        st.session_state.authenticated = True
+        st.rerun()  # Rerun to update the session state and navigate to home
+    elif login == "login_failed":
         st.warning("Login failed")
+        st.session_state.authenticated = False
+    else:
+        st.warning("Please Login..")
 
 if __name__ == "__main__":
     main()
+
 
 # import streamlit as st
 # from StreamlitGauth.google_auth import Google_auth
