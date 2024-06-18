@@ -1,23 +1,14 @@
-# def main():
-#     st.write("# Home Page")
-    
-#     # Get the query parameters
-#     query_params = st.query_params()
-    
-#     # Check if the 'authenticated' parameter is present and set to 'true'
-#     if 'authenticated' in query_params and query_params['authenticated'][0] == 'true':
-#         st.success("Login Successful")
-#     else:
-#         st.warning("Login failed")
-
-# if _name_ == "_main_":
-#     main()
-
 import streamlit as st
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 import base64
+import warnings
+
+# Ignore all warnings
+warnings.filterwarnings("ignore")
+
+st.logo("images/lavenir.PNG")
 
 def get_base64(bin_file):
     with open(bin_file, 'rb') as f:
@@ -183,7 +174,7 @@ def show_dashboard():
                 st.write("Select the type of Properties")
                 commercial = st.checkbox("Commercial", value=st.session_state.get('commercial_checkbox', False), key='commercial_checkbox', on_change=lambda: update_commercial_checkbox("Commercial"))
                 residential = st.checkbox("Residential", value=st.session_state.get('residential_checkbox', False), key='residential_checkbox', on_change=lambda: update_residential_checkbox("Residential"))
-                individual = st.checkbox("Individual", value=st.session_state.get('individual_checkbox', False), key='individual_checkbox', on_change=lambda: update_individual_checkbox("Individual"))
+                individual = st.checkbox("Individual", value=st.session_state.get('individual_checkbox', False), key='individual_checkbox', on_change=lambda: update_individual_checkbox("Individual"), disabled=True)
 
                 if st.button("Load Data"):
                     filtered_data = filter_data_based_on_county(data, [selected_county])
