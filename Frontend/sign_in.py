@@ -1,16 +1,17 @@
 import streamlit as st
 from StreamlitGauth.google_auth import Google_auth
-# import warnings
-
-# # Ignore all warnings
-# warnings.filterwarnings("ignore")
+import warnings
 
 st.logo("images/lavenir.PNG")
 
 def main():
+    # Ignore all warnings
+    warnings.filterwarnings("ignore")
+    
     client_id = "166960327947-gslpqkh5091ppc7paa4fj05sokjktv37.apps.googleusercontent.com"
     client_secret = "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"
-    redirect_uri = "http://128.197.206.144:8501/home"
+    base_url = "http://128.197.206.144:8501/"
+    redirect_uri = base_url+"home"
 
     login = Google_auth(clientId=client_id, clientSecret=client_secret, redirect_uri=redirect_uri)
 
