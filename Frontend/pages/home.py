@@ -5,9 +5,6 @@ from shapely.geometry import Point
 import base64
 import warnings
 
-# Ignore all warnings
-warnings.filterwarnings("ignore")
-
 st.logo("images/lavenir.PNG")
 
 def get_base64(bin_file):
@@ -29,6 +26,9 @@ def set_background(png_file):
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
 def show_dashboard():
+    # Ignore all warnings
+    warnings.filterwarnings("ignore")   
+    
     set_background('./images/background.png')
 
     st.title("L'Avenir Holdings inc Dashboard")
