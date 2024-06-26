@@ -87,6 +87,12 @@ def show_dashboard():
     else:
         owner_column = 'Owner'
         neighborhood_column = 'Situs City'
+    
+    def update_property_type(selected):
+        st.session_state.property_type = selected
+
+    def update_vehicle_type(selected):
+        st.session_state.vehicle_type = selected
 
     # Function to clean and convert numeric columns
     def clean_numeric_column(series):
@@ -108,54 +114,15 @@ def show_dashboard():
     if 'vehicle_type' not in st.session_state:
         st.session_state.vehicle_type = None
 
-    def update_checkboxes_properties(selected):
-        st.session_state.property_type = selected
-        st.session_state.properties_checkbox = selected == "Properties"
-        st.session_state.vehicle_checkbox = False
-        st.session_state.valuable_goods_checkbox = False
-
-    def update_checkboxes_vehicle(selected):
-        st.session_state.property_type = selected
-        st.session_state.properties_checkbox = False
-        st.session_state.vehicle_checkbox = selected == "Vehicle"
-        st.session_state.valuable_goods_checkbox = False
-
-    def update_valuable_goods_checkbox(selected):
-        st.session_state.property_type = selected
-        st.session_state.properties_checkbox = False
-        st.session_state.vehicle_checkbox = False
-        st.session_state.valuable_goods_checkbox = selected == "Valuable Goods"
-
-    def update_commercial_checkbox(selected):
-        st.session_state.property_type = selected
-        st.session_state.commercial_checkbox = selected == "Commercial"
-        st.session_state.residential_checkbox = False
-        st.session_state.individual_checkbox = False
-
-    def update_residential_checkbox(selected):
-        st.session_state.property_type = selected
-        st.session_state.commercial_checkbox = False
-        st.session_state.residential_checkbox  = selected == "Residential"
-        st.session_state.individual_checkbox = False
-
-    def update_individual_checkbox(selected):
-        st.session_state.property_type = selected
-        st.session_state.commercial_checkbox = False
-        st.session_state.residential_checkbox = False
-        st.session_state.individual_checkbox  = selected == "Individual"
-
-    def update_commercial_vehicle_checkbox(selected):
-        st.session_state.vehicle_type = selected
-        st.session_state.commercial_vehicle_checkbox = selected == "Commercial Vehicle"
-        st.session_state.individual_vehicle_checkbox = False
-
-    def update_individual_vehicle_checkbox(selected):
-        st.session_state.vehicle_type = selected
-        st.session_state.commercial_vehicle_checkbox = False
-        st.session_state.individual_vehicle_checkbox  = selected == "Individual Vehicle"
-
+    @st.cache_data
+    def filter_data_based_on_type(data):
+        filtered_data = data[(data['Type'].isin(['IND', 'CORP']))]
+        return filtered_data
+    
     with tab1:
         col1, col2 = st.columns(2)
+        # tab1_data = load_data('all_2024_details.xlsx')
+        # tab1_data = filter_data_based_on_type(tab1_data)
 
         with col1:
             state = ["Alabama(AL)", "Alaska(AK)", "Arizona(AZ)", "Arkansas(AR)", "California(CA)", "Colorado(CO)", "Connecticut(CT)", "Delaware(DE)", "Florida(FL)", "Georgia(GA)", "Hawaii(HI)", "Idaho(ID)", "Illinois(IL)", "Indiana(IN)", "Iowa(IA)", "Kansas(KS)", "Kentucky(KY)", "Louisiana(LA)", "Maine(ME)", "Maryland(MD)", "Massachusetts(MA)", "Michigan(MI)", "Minnesota(MN)", "Mississippi(MS)", "Missouri(MO)", "Montana(MT)", "Nebraska(NE)", "Nevada(NV)", "New Hampshire(NH)", "New Jersey(NJ)", "New Mexico(NM)", "New York(NY)", "North Carolina(NC)", "North Dakota(ND)", "Ohio(OH)", "Oklahoma(OK)", "Oregon(OR)", "Pennsylvania(PA)", "Rhode Island(RI)", "South Carolina(SC)", "South Dakota(SD)", "Tennessee(TN)", "Texas(TX)", "Utah(UT)", "Vermont(VT)", "Virginia(VA)", "Washington(WA)", "West Virginia(WV)", "Wisconsin(WI)", "Wyoming(WY)"]
@@ -166,54 +133,45 @@ def show_dashboard():
                 county = data["Situs City"].unique().tolist()
                 selected_county = st.selectbox('County/Township', ['All'] + county)
                 
-                st.checkbox("Properties", value=st.session_state.get('properties_checkbox', False), key='properties_checkbox', on_change=update_checkboxes_properties, args=("Properties",))
-                st.checkbox("Vehicle", value=st.session_state.get('vehicle_checkbox', False), key='vehicle_checkbox', on_change=update_checkboxes_vehicle, args=("Vehicle",))
-                st.checkbox("Valuable Goods", value=st.session_state.get('valuable_goods_checkbox', False), key='valuable_goods_checkbox', on_change=update_valuable_goods_checkbox, args=("Valuable Goods",))
+                property_type = st.radio("Select Property Type:", ["None", "Properties", "Vehicle", "Valuable Goods"], key='property_type', horizontal=False, index=0)
             
-            if st.session_state.get('properties_checkbox', False):
+            if property_type == "Properties":
                 st.write("Select the type of Properties")
-                commercial = st.checkbox("Commercial", value=st.session_state.get('commercial_checkbox', False), key='commercial_checkbox', on_change=lambda: update_commercial_checkbox("Commercial"))
-                residential = st.checkbox("Residential", value=st.session_state.get('residential_checkbox', False), key='residential_checkbox', on_change=lambda: update_residential_checkbox("Residential"))
-                individual = st.checkbox("Individual", value=st.session_state.get('individual_checkbox', False), key='individual_checkbox', on_change=lambda: update_individual_checkbox("Individual"), disabled=True)
+                selected_property_subtype = st.radio("Subtype", ["Corporation", "Residential", "Individual"], key='property_subtype')
 
                 if st.button("Load Data"):
                     filtered_data = filter_data_based_on_county(data, [selected_county])
+                    if selected_property_subtype == "Corporation":
+                        filtered_data = filtered_data[filtered_data["Type"] == "CORP"]
+                    elif selected_property_subtype == "Individual":
+                        filtered_data = filtered_data[filtered_data["Type"] == "IND"]
+                    elif selected_property_subtype == "Residential":
+                        filtered_data = filtered_data[filtered_data["Type"] == "IND"]
                     st.success("Data Loaded below..")
                     st.dataframe(filtered_data, width=1000, height=600)
                 else:
                     st.warning("Select option from above..")
 
-            elif st.session_state.get('vehicle_checkbox', False):
+            elif property_type == "Vehicle":
                 st.write("Select the type of Vehicle")
-                individual_vehicles = st.checkbox("Individual Vehicle", value=st.session_state.get('individual_vehicle_checkbox', False), key='individual_vehicle_checkbox', on_change=lambda: update_individual_vehicle_checkbox("Individual Vehicle"))
-                commercial_vehicles = st.checkbox("Commercial Vehicle", value=st.session_state.get('commercial_vehicle_checkbox', False), key='commercial_vehicle_checkbox', on_change=lambda: update_commercial_vehicle_checkbox("Commercial Vehicle"))
-                if individual_vehicles:
-                    st.success("You chose Individual Vehicle to filter data")
+                selected_vehicle_subtype = st.radio("Subtype", ["Individual Vehicle", "Commercial Vehicle"], key='vehicle_subtype')
+                if selected_vehicle_subtype:
+                    st.success(f"You chose {selected_vehicle_subtype} to filter data")
                     if st.button("Load Data"):
                         filtered_data = filter_data_based_on_county(data, [selected_county])
-                        st.success("Data Loaded below..")
-                        st.dataframe(filtered_data, width=1000, height=600)
+                        st.warning("No Data available for Vehicles..")
+                        # st.dataframe(filtered_data, width=1000, height=600)
                     else:
                         st.warning("Select option from above..")
 
-                elif commercial_vehicles:
-                    st.success("You chose Commerical Vehicle to filter data")
-                    if st.button("Load Data"):
-                        filtered_data = filter_data_based_on_county(data, [selected_county])
-                        st.success("Data Loaded below..")
-                        st.dataframe(filtered_data, width=1000, height=600)
-                    else:
-                        st.warning("Select option from above..")
-
-            elif st.session_state.get('valuable_goods_checkbox', False):
+            elif property_type == "Valuable Goods":
                 st.success("You chose Valuable Goods to filter data")
                 if st.button("Load Data"):
                     filtered_data = filter_data_based_on_county(data, [selected_county])
-                    st.success("No Available option for Valuable goods but find Data Loaded below..")
-                    st.dataframe(filtered_data, width=1000, height=600)
+                    st.success("No Available option for Valuable goods..")
+                    # st.dataframe(filtered_data, width=1000, height=600)
                 else:
                     st.warning("Select option from above..")
-
 
     with tab2:
         data = data.dropna(subset=['lat', 'lng', 'Situs Zip Code', 'Last Sale Date', 'Prior Sale Date', 'Year Built'])
