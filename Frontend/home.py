@@ -29,6 +29,7 @@ def show_dashboard():
     warnings.filterwarnings("ignore")   
 
     set_background('./images/background.png')
+    st.logo("images/lavenir.PNG")
 
     st.title("L'Avenir Holdings inc Dashboard")
 

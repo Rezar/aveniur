@@ -32,6 +32,7 @@ VALID_PASSWORD = "password"
 
 def main():
     # Ignore all warnings
+    st.logo("images/lavenir.PNG")
     warnings.filterwarnings("ignore")
 
     # Initialize session state for authentication
